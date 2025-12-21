@@ -1,0 +1,194 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dna, Leaf, Shield, Users, ArrowRight, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import type { UserRole } from '@/types/auth';
+
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('user');
+  const { login, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: 'Missing credentials',
+        description: 'Please enter your email and password.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const success = await login(email, password, selectedRole);
+    
+    if (success) {
+      toast({
+        title: 'Welcome back!',
+        description: `Logged in as ${selectedRole === 'admin' ? 'Administrator' : 'Researcher'}`,
+      });
+      navigate(selectedRole === 'admin' ? '/admin' : '/dashboard');
+    } else {
+      toast({
+        title: 'Login failed',
+        description: 'Invalid credentials. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex">
+      {/* Left Panel - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 gradient-hero relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-50" />
+        
+        <div className="relative z-10 flex flex-col justify-center p-12 text-primary-foreground">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center">
+                <Dna className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold">CropGen AI</h1>
+                <p className="text-primary-foreground/80">Genetic Traits & Crop Recommendation</p>
+              </div>
+            </div>
+
+            <h2 className="text-4xl font-bold mb-6 leading-tight">
+              Unlock the Power of<br />Agricultural Genetics
+            </h2>
+            
+            <p className="text-lg text-primary-foreground/90 mb-10 max-w-md">
+              Advanced machine learning meets crop science. Analyze genetic traits, 
+              predict yields, and make data-driven agricultural decisions.
+            </p>
+
+            <div className="space-y-4">
+              {[
+                { icon: Leaf, text: 'Comprehensive crop and trait databases' },
+                { icon: Shield, text: 'Secure data management and analysis' },
+                { icon: Users, text: 'Collaborative research tools' },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 + i * 0.1 }}
+                  className="flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-primary-foreground/90">{item.text}</span>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Right Panel - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-6 bg-background">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4 }}
+          className="w-full max-w-md"
+        >
+          <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
+            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
+              <Dna className="w-6 h-6 text-primary-foreground" />
+            </div>
+            <span className="text-2xl font-bold">CropGen AI</span>
+          </div>
+
+          <Card variant="elevated" className="border-0 shadow-2xl">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl">Welcome back</CardTitle>
+              <CardDescription>Sign in to access your dashboard</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Tabs value={selectedRole} onValueChange={(v) => setSelectedRole(v as UserRole)} className="mb-6">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="user" className="gap-2">
+                    <Users className="w-4 h-4" />
+                    Researcher
+                  </TabsTrigger>
+                  <TabsTrigger value="admin" className="gap-2">
+                    <Shield className="w-4 h-4" />
+                    Admin
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+
+                <Button 
+                  type="submit" 
+                  variant="hero"
+                  size="lg"
+                  className="w-full mt-6"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Sign In
+                      <ArrowRight className="w-5 h-5" />
+                    </>
+                  )}
+                </Button>
+              </form>
+
+              <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
+                <p className="text-xs text-muted-foreground text-center">
+                  <strong>Demo:</strong> Enter any email and password to login
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

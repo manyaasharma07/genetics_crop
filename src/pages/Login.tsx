@@ -180,7 +180,7 @@ export default function Login() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder={selectedRole === 'admin' ? 'AD-youradmin@example.com' : 'you@example.com'}
+                    placeholder="your.email@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="h-11"
@@ -189,11 +189,11 @@ export default function Login() {
                 
                 {mode === 'signup' && selectedRole === 'admin' && (
                   <div className="space-y-2">
-                    <Label htmlFor="username">Admin Username</Label>
+                    <Label htmlFor="username">Admin Username (must start with AD-)</Label>
                     <Input
                       id="username"
                       type="text"
-                      placeholder="AD-lead-admin"
+                      placeholder="AD-lead01"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       className="h-11"
@@ -238,7 +238,7 @@ export default function Login() {
                 </p>
                 <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
                   <UserIcon className="w-4 h-4" />
-                  Admin emails must start with "AD-" plus 5 characters.
+                  Admin usernames must start with "AD-" plus at least 5 characters.
                 </p>
               </div>
             </CardContent>

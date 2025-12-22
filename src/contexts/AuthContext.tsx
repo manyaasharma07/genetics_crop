@@ -66,11 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (role === 'admin') {
-      if (!username?.trim()) {
+      const trimmedUsername = username?.trim() ?? '';
+      if (!trimmedUsername) {
         return { success: false, message: 'Admin accounts require a username.' };
       }
-      if (!email.startsWith('AD-') || email.slice(3).length < 5) {
-        return { success: false, message: 'Admin email must start with "AD-" and include at least 5 characters after it.' };
+      if (!trimmedUsername.startsWith('AD-') || trimmedUsername.slice(3).length < 5) {
+        return { success: false, message: 'Admin username must start with "AD-" and include at least 5 characters after it.' };
       }
     }
 

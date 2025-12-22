@@ -18,6 +18,8 @@ import {
   Play,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { trainModel, calculateMetrics } from '@/lib/ml/modelTraining';
+import { saveModel, getModelMetadata, deleteModel } from '@/lib/ml/modelStorage';
 
 const featureImportance = [
   { name: 'Soil pH', value: 0 },
@@ -28,41 +30,68 @@ const featureImportance = [
   { name: 'Humidity', value: 0 },
 ];
 
-const modelHistory = [
-  { version: 'v0.0.0', date: '2024-01-15', accuracy: 0, status: 'active', lastTrained: '2024-01-15 10:30 UTC' },
-  { version: 'v0.0.0', date: '2024-01-01', accuracy: 0, status: 'archived', lastTrained: '2024-01-01 09:00 UTC' },
-  { version: 'v0.0.0', date: '2023-12-15', accuracy: 0, status: 'archived', lastTrained: '2023-12-15 08:10 UTC' },
-];
-
 export default function MLModel() {
   const { toast } = useToast();
   const [isRetraining, setIsRetraining] = useState(false);
   const [retrainProgress, setRetrainProgress] = useState(0);
+  const [modelMetadata, setModelMetadata] = useState(getModelMetadata());
+  const [currentAccuracy, setCurrentAccuracy] = useState(modelMetadata?.accuracy || 0);
+  const [trainingStats, setTrainingStats] = useState(modelMetadata?.trainingStats);
 
-  const handleRetrain = () => {
+  const handleRetrain = async () => {
     setIsRetraining(true);
     setRetrainProgress(0);
     
-    const interval = setInterval(() => {
-      setRetrainProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsRetraining(false);
-          toast({
-            title: "Model Retrained",
-            description: "The ML model has been successfully retrained with the latest data.",
-          });
-          return 100;
-        }
-        return prev + 5;
+    try {
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setRetrainProgress(prev => Math.min(prev + 10, 90));
+      }, 500);
+      
+      // Train model
+      const result = await trainModel();
+      
+      // Save model
+      saveModel(result);
+      
+      clearInterval(progressInterval);
+      setRetrainProgress(100);
+      
+      // Update state
+      setModelMetadata(getModelMetadata());
+      setCurrentAccuracy(result.accuracy);
+      setTrainingStats(result.trainingStats);
+      
+      // Calculate detailed metrics
+      const metrics = calculateMetrics(result.testPredictions, result.testLabels);
+      
+      setTimeout(() => {
+        setIsRetraining(false);
+        setRetrainProgress(0);
+        toast({
+          title: "Model Retrained Successfully",
+          description: `Accuracy: ${result.accuracy.toFixed(2)}% | Trained on ${result.trainingStats.trainSize} samples`,
+        });
+      }, 500);
+    } catch (error) {
+      setIsRetraining(false);
+      setRetrainProgress(0);
+      toast({
+        title: "Training Failed",
+        description: error instanceof Error ? error.message : "An error occurred during training",
+        variant: "destructive",
       });
-    }, 300);
+    }
   };
 
   const handleRollback = () => {
+    deleteModel();
+    setModelMetadata(null);
+    setCurrentAccuracy(0);
+    setTrainingStats(undefined);
     toast({
       title: "Model Rolled Back",
-      description: "Reverted to the previous stable model version.",
+      description: "Model has been deleted. Please retrain to create a new model.",
     });
   };
 
@@ -161,7 +190,9 @@ export default function MLModel() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Version</p>
-                    <p className="text-xl font-bold text-foreground mt-1">v0.0.0</p>
+                    <p className="text-xl font-bold text-foreground mt-1">
+                      {modelMetadata ? `v${modelMetadata.version}` : 'Not Trained'}
+                    </p>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Clock className="w-5 h-5 text-primary" />
@@ -181,8 +212,14 @@ export default function MLModel() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Training Data</p>
-                    <p className="text-xl font-bold text-foreground mt-1">0</p>
-                    <p className="text-xs text-muted-foreground mt-1">Last trained: {modelHistory[0].lastTrained}</p>
+                    <p className="text-xl font-bold text-foreground mt-1">
+                      {trainingStats?.trainSize.toLocaleString() || '0'}
+                    </p>
+                    {modelMetadata && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Last trained: {new Date(modelMetadata.trainedAt).toLocaleString()}
+                      </p>
+                    )}
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Database className="w-5 h-5 text-primary" />
@@ -202,7 +239,9 @@ export default function MLModel() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Accuracy</p>
-                    <p className="text-xl font-bold text-foreground mt-1">0%</p>
+                    <p className="text-xl font-bold text-foreground mt-1">
+                      {currentAccuracy > 0 ? `${currentAccuracy.toFixed(1)}%` : '0%'}
+                    </p>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <TrendingUp className="w-5 h-5 text-primary" />
@@ -234,9 +273,11 @@ export default function MLModel() {
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm text-foreground">Accuracy</span>
-                      <span className="text-sm font-medium text-foreground">0%</span>
+                      <span className="text-sm font-medium text-foreground">
+                        {currentAccuracy > 0 ? `${currentAccuracy.toFixed(1)}%` : '0%'}
+                      </span>
                     </div>
-                    <Progress value={0} className="h-2" />
+                    <Progress value={currentAccuracy} className="h-2" />
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
@@ -288,53 +329,80 @@ export default function MLModel() {
         >
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>Model Version History</CardTitle>
-              <CardDescription>Previous model versions and their performance</CardDescription>
+              <CardTitle>Model Information</CardTitle>
+              <CardDescription>Current model version and training details</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {modelHistory.map((model, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              {modelMetadata ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${model.status === 'active' ? 'bg-primary' : 'bg-muted-foreground'}`} />
+                      <div className="w-2 h-2 rounded-full bg-primary" />
                       <div>
-                        <p className="font-medium text-foreground">{model.version}</p>
-                        <p className="text-sm text-muted-foreground">Trained on {model.date}</p>
+                        <p className="font-medium text-foreground">v{modelMetadata.version}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Trained: {new Date(modelMetadata.trainedAt).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">Accuracy: {model.accuracy}%</span>
-                      <Badge variant={model.status === 'active' ? 'default' : 'secondary'}>
-                        {model.status}
-                      </Badge>
+                      <span className="text-sm text-muted-foreground">
+                        Accuracy: {modelMetadata.accuracy.toFixed(1)}%
+                      </span>
+                      <Badge variant="default">Active</Badge>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Training Samples</p>
+                      <p className="text-sm font-medium">{modelMetadata.trainingStats.trainSize.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Test Samples</p>
+                      <p className="text-sm font-medium">{modelMetadata.trainingStats.testSize.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Features</p>
+                      <p className="text-sm font-medium">{modelMetadata.trainingStats.nFeatures}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Classes</p>
+                      <p className="text-sm font-medium">{modelMetadata.trainingStats.nClasses}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <AlertTriangle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>No model trained yet. Click "Retrain Model" to start training.</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
 
         {/* Alert */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card variant="elevated" className="border-l-4 border-l-warning">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-foreground">New Data Available</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    0 new records have been added since the last training. Consider retraining the model to incorporate the latest data for improved accuracy.
-                  </p>
+        {!modelMetadata && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card variant="elevated" className="border-l-4 border-l-warning">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-foreground">Model Not Trained</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      No trained model found. Click "Retrain Model" to train a new RandomForest model on the crop recommendation dataset.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
       </div>
     </DashboardLayout>
   );

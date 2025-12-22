@@ -22,6 +22,9 @@ import {
   History,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { predict, predictBatch, PredictionInput } from '@/lib/ml/prediction';
+import { hasModel } from '@/lib/ml/modelStorage';
+import Papa from 'papaparse';
 
 const predictionHistory = [
   { id: 1, date: '2024-01-15', inputType: 'Manual', recommendedCrop: 'Rice', yield: '0 t/ha', suitability: '0%', risk: 'Low', saved: true },
@@ -73,30 +76,91 @@ export default function Predictions() {
   const [isPrediciting, setIsPredicting] = useState(false);
   const [predictionResult, setPredictionResult] = useState<PredictionResult | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [formData, setFormData] = useState({
+    N: '',
+    P: '',
+    K: '',
+    temperature: '',
+    humidity: '',
+    ph: '',
+    rainfall: '',
+    region: 'tropical',
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handleManualPrediction = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if model exists
+    if (!hasModel()) {
+      toast({
+        title: 'Model Not Trained',
+        description: 'Please train a model in the Admin ML Model page first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Validate inputs
+    const inputs = [
+      formData.N,
+      formData.P,
+      formData.K,
+      formData.temperature,
+      formData.humidity,
+      formData.ph,
+      formData.rainfall,
+    ];
+    
+    if (inputs.some(val => !val || val === '')) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill in all input fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsPredicting(true);
     
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setPredictionResult({
-      crops: [
-        { name: 'IR64 Rice', yield: '0 t/ha', suitability: 0, risk: 'Low', confidence: 0 },
-        { name: 'Pusa Basmati', yield: '0 t/ha', suitability: 0, risk: 'Low', confidence: 0 },
-        { name: 'HD2967 Wheat', yield: '0 t/ha', suitability: 0, risk: 'Medium', confidence: 0 },
-        { name: 'NK6240 Maize', yield: '0 t/ha', suitability: 0, risk: 'Medium', confidence: 0 },
-        { name: 'BT Cotton', yield: '0 t/ha', suitability: 0, risk: 'High', confidence: 0 },
-      ],
-    });
-    
-    setIsPredicting(false);
-    toast({
-      title: 'Prediction Complete',
-      description: 'View recommended crops below.',
-    });
+    try {
+      const input: PredictionInput = {
+        N: parseFloat(formData.N),
+        P: parseFloat(formData.P),
+        K: parseFloat(formData.K),
+        temperature: parseFloat(formData.temperature),
+        humidity: parseFloat(formData.humidity),
+        ph: parseFloat(formData.ph),
+        rainfall: parseFloat(formData.rainfall),
+      };
+      
+      const result = predict(input);
+      
+      // Convert prediction to display format
+      setPredictionResult({
+        crops: [{
+          name: result.crop,
+          yield: 'N/A', // Model doesn't predict yield, only crop type
+          suitability: Math.round(result.confidence),
+          risk: result.confidence > 80 ? 'Low' : result.confidence > 60 ? 'Medium' : 'High',
+          confidence: Math.round(result.confidence),
+        }],
+      });
+      
+      toast({
+        title: 'Prediction Complete',
+        description: `Recommended crop: ${result.crop}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Prediction Failed',
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPredicting(false);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,20 +177,117 @@ export default function Predictions() {
   const handleCSVPrediction = async () => {
     if (!uploadedFile) return;
     
+    // Check if model exists
+    if (!hasModel()) {
+      toast({
+        title: 'Model Not Trained',
+        description: 'Please train a model in the Admin ML Model page first.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsPredicting(true);
-    await new Promise(resolve => setTimeout(resolve, 2500));
     
-    setPredictionResult({
-      crops: [
-        { name: 'Multiple Recommendations', yield: '0 t/ha (avg)', suitability: 0, risk: 'Varies', confidence: 0 },
-      ],
-    });
-    
-    setIsPredicting(false);
-    toast({
-      title: 'Batch Prediction Complete',
-      description: '0 rows processed successfully.',
-    });
+    try {
+      const fileText = await uploadedFile.text();
+      
+      Papa.parse<Record<string, string>>(fileText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          try {
+            const inputs: PredictionInput[] = [];
+            const errors: Array<{ row: number; error: string }> = [];
+            
+            results.data.forEach((row, idx) => {
+              try {
+                const input: PredictionInput = {
+                  N: parseFloat(row.N || row.n || ''),
+                  P: parseFloat(row.P || row.p || ''),
+                  K: parseFloat(row.K || row.k || ''),
+                  temperature: parseFloat(row.temperature || row.Temperature || ''),
+                  humidity: parseFloat(row.humidity || row.Humidity || ''),
+                  ph: parseFloat(row.ph || row.pH || row.PH || ''),
+                  rainfall: parseFloat(row.rainfall || row.Rainfall || ''),
+                };
+                
+                // Validate all fields are numbers
+                if (Object.values(input).some(val => isNaN(val))) {
+                  errors.push({ row: idx + 2, error: 'Invalid or missing values' });
+                  return;
+                }
+                
+                inputs.push(input);
+              } catch (error) {
+                errors.push({ row: idx + 2, error: 'Parse error' });
+              }
+            });
+            
+            if (inputs.length === 0) {
+              throw new Error('No valid rows found in CSV');
+            }
+            
+            const batchResult = predictBatch(inputs);
+            
+            // Get unique crops from predictions
+            const cropCounts: Record<string, number> = {};
+            batchResult.predictions.forEach(pred => {
+              cropCounts[pred.crop] = (cropCounts[pred.crop] || 0) + 1;
+            });
+            
+            const topCrops = Object.entries(cropCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5)
+              .map(([crop, count]) => ({
+                name: crop,
+                yield: 'N/A',
+                suitability: Math.round((count / batchResult.predictions.length) * 100),
+                risk: 'Low',
+                confidence: Math.round((count / batchResult.predictions.length) * 100),
+              }));
+            
+            setPredictionResult({
+              crops: topCrops.length > 0 ? topCrops : [{
+                name: 'Multiple Recommendations',
+                yield: 'N/A',
+                suitability: 0,
+                risk: 'Varies',
+                confidence: 0,
+              }],
+            });
+            
+            setIsPredicting(false);
+            toast({
+              title: 'Batch Prediction Complete',
+              description: `${batchResult.successCount} rows processed successfully${batchResult.errorCount > 0 ? `, ${batchResult.errorCount} errors` : ''}.`,
+            });
+          } catch (error) {
+            setIsPredicting(false);
+            toast({
+              title: 'Batch Prediction Failed',
+              description: error instanceof Error ? error.message : 'An error occurred',
+              variant: 'destructive',
+            });
+          }
+        },
+        error: (error) => {
+          setIsPredicting(false);
+          toast({
+            title: 'CSV Parse Error',
+            description: error.message,
+            variant: 'destructive',
+          });
+        },
+      });
+    } catch (error) {
+      setIsPredicting(false);
+      toast({
+        title: 'File Read Error',
+        description: 'Could not read uploaded file',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSavePrediction = () => {
@@ -174,42 +335,94 @@ export default function Predictions() {
                     <form onSubmit={handleManualPrediction} className="space-y-4">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label>Soil pH</Label>
-                          <Input type="number" step="0.1" placeholder="0.0" />
+                          <Label>Nitrogen (N)</Label>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="0.0" 
+                            value={formData.N}
+                            onChange={(e) => setFormData({...formData, N: e.target.value})}
+                            required
+                          />
                         </div>
                         <div className="space-y-2">
-                          <Label>Nitrogen (kg/ha)</Label>
-                          <Input type="number" placeholder="0" />
+                          <Label>Phosphorus (P)</Label>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="0.0" 
+                            value={formData.P}
+                            onChange={(e) => setFormData({...formData, P: e.target.value})}
+                            required
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
-                          <Label>Phosphorus (kg/ha)</Label>
-                          <Input type="number" placeholder="0" />
+                          <Label>Potassium (K)</Label>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="0.0" 
+                            value={formData.K}
+                            onChange={(e) => setFormData({...formData, K: e.target.value})}
+                            required
+                          />
                         </div>
-                        <div className="space-y-2">
-                          <Label>Potassium (kg/ha)</Label>
-                          <Input type="number" placeholder="0" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label>Temperature (°C)</Label>
-                          <Input type="number" placeholder="0" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Rainfall (mm)</Label>
-                          <Input type="number" placeholder="0" />
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="0.0" 
+                            value={formData.temperature}
+                            onChange={(e) => setFormData({...formData, temperature: e.target.value})}
+                            required
+                          />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-2">
                           <Label>Humidity (%)</Label>
-                          <Input type="number" placeholder="0" />
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="0.0" 
+                            value={formData.humidity}
+                            onChange={(e) => setFormData({...formData, humidity: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Soil pH</Label>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="0.0" 
+                            value={formData.ph}
+                            onChange={(e) => setFormData({...formData, ph: e.target.value})}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label>Rainfall (mm)</Label>
+                          <Input 
+                            type="number" 
+                            step="0.1" 
+                            placeholder="0.0" 
+                            value={formData.rainfall}
+                            onChange={(e) => setFormData({...formData, rainfall: e.target.value})}
+                            required
+                          />
                         </div>
                         <div className="space-y-2">
                           <Label>Region</Label>
-                          <Select defaultValue="tropical">
+                          <Select 
+                            value={formData.region}
+                            onValueChange={(val) => setFormData({...formData, region: val})}
+                          >
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>

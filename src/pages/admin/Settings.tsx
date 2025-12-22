@@ -30,6 +30,8 @@ export default function Settings() {
     autoApprove: false,
     emailNotifications: true,
     maintenanceMode: false,
+    loggingEnabled: true,
+    monitoringEnabled: true,
   });
 
   const handleSave = () => {
@@ -218,6 +220,28 @@ export default function Settings() {
                   <Switch 
                     checked={settings.maintenanceMode}
                     onCheckedChange={(v) => setSettings({...settings, maintenanceMode: v})}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">Enable Logging</p>
+                    <p className="text-sm text-muted-foreground">Capture admin actions and system events</p>
+                  </div>
+                  <Switch 
+                    checked={settings.loggingEnabled}
+                    onCheckedChange={(v) => setSettings({...settings, loggingEnabled: v})}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-foreground">Enable Monitoring</p>
+                    <p className="text-sm text-muted-foreground">Track performance and health metrics</p>
+                  </div>
+                  <Switch 
+                    checked={settings.monitoringEnabled}
+                    onCheckedChange={(v) => setSettings({...settings, monitoringEnabled: v})}
                   />
                 </div>
               </CardContent>

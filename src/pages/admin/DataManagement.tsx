@@ -20,36 +20,14 @@ import {
 import { useToast } from '@/hooks/use-toast';
 
 const allRecords = [
-  { id: 1, type: 'Crop', name: 'Wheat IR-8', source: 'CSV Upload', status: 'Approved', lastUpdated: '2024-01-15' },
-  { id: 2, type: 'Genetic', name: 'Drought-R1 Marker', source: 'Manual Entry', status: 'Pending', lastUpdated: '2024-01-14' },
-  { id: 3, type: 'Climate', name: 'Punjab Q4 2023', source: 'API Sync', status: 'Approved', lastUpdated: '2024-01-13' },
-  { id: 4, type: 'Soil', name: 'Field A-12 Analysis', source: 'CSV Upload', status: 'Pending', lastUpdated: '2024-01-12' },
-  { id: 5, type: 'Crop', name: 'Rice Basmati-370', source: 'Manual Entry', status: 'Approved', lastUpdated: '2024-01-11' },
-  { id: 6, type: 'Genetic', name: 'Yield-G3 SNP', source: 'CSV Upload', status: 'Rejected', lastUpdated: '2024-01-10' },
-  { id: 7, type: 'Climate', name: 'Sindh Q3 2023', source: 'API Sync', status: 'Approved', lastUpdated: '2024-01-09' },
-  { id: 8, type: 'Soil', name: 'Field B-7 Analysis', source: 'Manual Entry', status: 'Pending', lastUpdated: '2024-01-08' },
-];
-
-const columns = [
-  { key: 'type', label: 'Type', render: (v: string) => (
-    <Badge variant="outline" className="font-medium">
-      {v}
-    </Badge>
-  )},
-  { key: 'name', label: 'Record Name' },
-  { key: 'source', label: 'Source' },
-  { key: 'status', label: 'Status', render: (v: string) => <StatusBadge status={v} /> },
-  { key: 'lastUpdated', label: 'Last Updated' },
-  { key: 'actions', label: 'Actions', render: (_: any, row: any) => (
-    <div className="flex gap-2">
-      <Button variant="ghost" size="icon" className="h-8 w-8">
-        <Edit className="w-4 h-4" />
-      </Button>
-      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
-        <Trash2 className="w-4 h-4" />
-      </Button>
-    </div>
-  )},
+  { id: 1, type: 'Crop', category: 'Crop records', name: 'Wheat IR-8', source: 'CSV Upload', status: 'Approved', lastUpdated: '2024-01-15' },
+  { id: 2, type: 'Genetic', category: 'Genetic traits', name: 'Drought-R1 Marker', source: 'Manual Entry', status: 'Pending', lastUpdated: '2024-01-14' },
+  { id: 3, type: 'Climate', category: 'Climate data', name: 'Punjab Q4 2023', source: 'API Sync', status: 'Approved', lastUpdated: '2024-01-13' },
+  { id: 4, type: 'Soil', category: 'Soil data', name: 'Field A-12 Analysis', source: 'CSV Upload', status: 'Pending', lastUpdated: '2024-01-12' },
+  { id: 5, type: 'Crop', category: 'Crop records', name: 'Rice Basmati-370', source: 'Manual Entry', status: 'Approved', lastUpdated: '2024-01-11' },
+  { id: 6, type: 'Genetic', category: 'Genetic traits', name: 'Yield-G3 SNP', source: 'CSV Upload', status: 'Rejected', lastUpdated: '2024-01-10' },
+  { id: 7, type: 'Climate', category: 'Climate data', name: 'Sindh Q3 2023', source: 'API Sync', status: 'Approved', lastUpdated: '2024-01-09' },
+  { id: 8, type: 'Soil', category: 'Soil data', name: 'Field B-7 Analysis', source: 'Manual Entry', status: 'Pending', lastUpdated: '2024-01-08' },
 ];
 
 export default function DataManagement() {
@@ -81,6 +59,36 @@ export default function DataManagement() {
       variant: "destructive",
     });
   };
+
+  const columns = [
+    { key: 'id', label: 'Record ID' },
+    { key: 'category', label: 'Category' },
+    { key: 'type', label: 'Type', render: (v: string) => (
+      <Badge variant="outline" className="font-medium">
+        {v}
+      </Badge>
+    )},
+    { key: 'name', label: 'Record Name' },
+    { key: 'source', label: 'Source' },
+    { key: 'status', label: 'Status', render: (v: string) => <StatusBadge status={v} /> },
+    { key: 'lastUpdated', label: 'Last Updated' },
+    { key: 'actions', label: 'Actions', render: (_: any, row: any) => (
+      <div className="flex gap-2">
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Edit className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+          <Trash2 className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleApprove(row.id)}>
+          <CheckCircle className="w-4 h-4 text-primary" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReject(row.id)}>
+          <XCircle className="w-4 h-4 text-destructive" />
+        </Button>
+      </div>
+    )},
+  ];
 
   return (
     <DashboardLayout>

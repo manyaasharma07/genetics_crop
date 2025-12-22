@@ -46,11 +46,12 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-      <Route path="/admin/data" element={<ProtectedRoute requiredRole="admin"><DataManagement /></ProtectedRoute>} />
-      <Route path="/admin/upload" element={<ProtectedRoute requiredRole="admin"><BulkUpload /></ProtectedRoute>} />
+      <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+      <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+      <Route path="/admin/data-management" element={<ProtectedRoute requiredRole="admin"><DataManagement /></ProtectedRoute>} />
+      <Route path="/admin/bulk-upload" element={<ProtectedRoute requiredRole="admin"><BulkUpload /></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><UserManagement /></ProtectedRoute>} />
-      <Route path="/admin/model" element={<ProtectedRoute requiredRole="admin"><MLModel /></ProtectedRoute>} />
+      <Route path="/admin/ml-model" element={<ProtectedRoute requiredRole="admin"><MLModel /></ProtectedRoute>} />
       <Route path="/admin/settings" element={<ProtectedRoute requiredRole="admin"><Settings /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute requiredRole="user"><UserDashboard /></ProtectedRoute>} />
       <Route path="/dashboard/crops" element={<ProtectedRoute requiredRole="user"><CropRecords /></ProtectedRoute>} />

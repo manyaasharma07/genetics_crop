@@ -29,9 +29,9 @@ const featureImportance = [
 ];
 
 const modelHistory = [
-  { version: 'v0.0.0', date: '2024-01-15', accuracy: 0, status: 'active' },
-  { version: 'v0.0.0', date: '2024-01-01', accuracy: 0, status: 'archived' },
-  { version: 'v0.0.0', date: '2023-12-15', accuracy: 0, status: 'archived' },
+  { version: 'v0.0.0', date: '2024-01-15', accuracy: 0, status: 'active', lastTrained: '2024-01-15 10:30 UTC' },
+  { version: 'v0.0.0', date: '2024-01-01', accuracy: 0, status: 'archived', lastTrained: '2024-01-01 09:00 UTC' },
+  { version: 'v0.0.0', date: '2023-12-15', accuracy: 0, status: 'archived', lastTrained: '2023-12-15 08:10 UTC' },
 ];
 
 export default function MLModel() {
@@ -57,6 +57,13 @@ export default function MLModel() {
         return prev + 5;
       });
     }, 300);
+  };
+
+  const handleRollback = () => {
+    toast({
+      title: "Model Rolled Back",
+      description: "Reverted to the previous stable model version.",
+    });
   };
 
   return (
@@ -89,6 +96,15 @@ export default function MLModel() {
                 Retrain Model
               </>
             )}
+          </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={handleRollback}
+            disabled={isRetraining}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Rollback Model
           </Button>
         </motion.div>
 
@@ -166,6 +182,7 @@ export default function MLModel() {
                   <div>
                     <p className="text-sm text-muted-foreground">Training Data</p>
                     <p className="text-xl font-bold text-foreground mt-1">0</p>
+                    <p className="text-xs text-muted-foreground mt-1">Last trained: {modelHistory[0].lastTrained}</p>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Database className="w-5 h-5 text-primary" />

@@ -25,11 +25,11 @@ interface SidebarProps {
 }
 
 const adminLinks = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-  { icon: Database, label: 'Data Management', href: '/admin/data' },
-  { icon: Upload, label: 'Bulk Upload', href: '/admin/upload' },
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/admin/dashboard' },
+  { icon: Database, label: 'Data Management', href: '/admin/data-management' },
+  { icon: Upload, label: 'Bulk Upload', href: '/admin/bulk-upload' },
   { icon: Users, label: 'User Management', href: '/admin/users' },
-  { icon: Brain, label: 'ML Model', href: '/admin/model' },
+  { icon: Brain, label: 'ML Model', href: '/admin/ml-model' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 

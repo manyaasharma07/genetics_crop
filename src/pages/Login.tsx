@@ -49,7 +49,7 @@ export default function Login() {
           title: 'Welcome back!',
           description: `Logged in as ${selectedRole === 'admin' ? 'Administrator' : 'Researcher'}`,
         });
-        navigate(selectedRole === 'admin' ? '/admin' : '/dashboard');
+        navigate(selectedRole === 'admin' ? '/admin/dashboard' : '/dashboard');
       } else {
         toast({
           title: 'Login failed',
@@ -66,7 +66,7 @@ export default function Login() {
         title: 'Account created',
         description: selectedRole === 'admin' ? 'Admin account ready.' : 'Welcome to CropGen AI.',
       });
-      navigate(selectedRole === 'admin' ? '/admin' : '/dashboard');
+      navigate(selectedRole === 'admin' ? '/admin/dashboard' : '/dashboard');
     } else {
       toast({
         title: 'Could not create account',

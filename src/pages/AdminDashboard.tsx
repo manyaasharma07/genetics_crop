@@ -92,13 +92,13 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ChartCard
             title="System Activity"
-            description="Monthly data processing trends"
+            description="Monthly data processing count"
             type="area"
             data={systemMetrics}
           />
           <ChartCard
             title="Data Distribution"
-            description="Records by category"
+            description="By category (crops, genetics, climate, soil)"
             type="pie"
             data={dataDistribution}
           />

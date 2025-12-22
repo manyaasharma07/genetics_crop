@@ -65,7 +65,7 @@ export default function Index() {
             <Link to="/login">
               <Button variant="ghost">Sign In</Button>
             </Link>
-            <Link to="/login">
+            <Link to="/login?mode=signup">
               <Button variant="hero">
                 Get Started
                 <ArrowRight className="w-4 h-4" />
@@ -102,7 +102,7 @@ export default function Index() {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/login">
+              <Link to="/login?mode=signup">
                 <Button variant="hero" size="xl">
                   Start Analyzing
                   <ArrowRight className="w-5 h-5" />
@@ -221,7 +221,7 @@ export default function Index() {
                   Join researchers and agronomists who are using CropGen AI to make 
                   data-driven decisions and improve crop yields.
                 </p>
-                <Link to="/login">
+                <Link to="/login?mode=signup">
                   <Button 
                     size="xl" 
                     className="bg-primary-foreground text-primary hover:bg-primary-foreground/90"

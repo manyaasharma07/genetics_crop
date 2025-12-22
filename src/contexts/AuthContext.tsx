@@ -1,78 +1,107 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { User, UserRole, AuthState } from '@/types/auth';
+import { authenticateUser, clearSession, createUser, loadSession, persistSession } from '@/lib/authStorage';
+
+interface AuthResult {
+  success: boolean;
+  message?: string;
+}
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string, role: UserRole) => Promise<boolean>;
+  login: (email: string, password: string, role: UserRole) => Promise<AuthResult>;
+  signUp: (params: { email: string; password: string; role: UserRole; username?: string }) => Promise<AuthResult>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demonstration
-const mockUsers: Record<string, { password: string; user: User }> = {
-  'admin@cropgen.com': {
-    password: 'admin123',
-    user: {
-      id: '1',
-      email: 'admin@cropgen.com',
-      name: 'Dr. Sarah Chen',
-      role: 'admin',
-    },
-  },
-  'researcher@cropgen.com': {
-    password: 'user123',
-    user: {
-      id: '2',
-      email: 'researcher@cropgen.com',
-      name: 'James Wilson',
-      role: 'user',
-    },
-  },
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isAuthenticated: false,
-    isLoading: false,
+    isLoading: true,
   });
 
-  const login = useCallback(async (email: string, password: string, role: UserRole): Promise<boolean> => {
+  // Restore session on load so refresh keeps the user logged in
+  useEffect(() => {
+    const sessionUser = loadSession();
+    if (sessionUser) {
+      setAuthState({
+        user: sessionUser,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } else {
+      setAuthState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, []);
+
+  const login = useCallback(async (email: string, password: string, role: UserRole): Promise<AuthResult> => {
     setAuthState(prev => ({ ...prev, isLoading: true }));
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const mockUser = mockUsers[email];
-    if (mockUser && mockUser.password === password && mockUser.user.role === role) {
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const result = authenticateUser(email, password, role);
+    if (result.user) {
       setAuthState({
-        user: mockUser.user,
+        user: result.user,
         isAuthenticated: true,
         isLoading: false,
       });
-      return true;
+      persistSession(result.user);
+      return { success: true };
     }
-    
-    // Allow demo login with any credentials
-    if (email && password) {
-      setAuthState({
-        user: {
-          id: Date.now().toString(),
-          email,
-          name: role === 'admin' ? 'Admin User' : 'Researcher',
-          role,
-        },
-        isAuthenticated: true,
-        isLoading: false,
-      });
-      return true;
-    }
-    
+
     setAuthState(prev => ({ ...prev, isLoading: false }));
-    return false;
+    return { success: false, message: result.error ?? 'Invalid credentials.' };
+  }, []);
+
+  const signUp = useCallback(async ({ email, password, role, username }: { email: string; password: string; role: UserRole; username?: string; }): Promise<AuthResult> => {
+    if (!email || !password) {
+      return { success: false, message: 'Email and password are required.' };
+    }
+
+    if (password.length < 8) {
+      return { success: false, message: 'Password must be at least 8 characters long.' };
+    }
+
+    if (role === 'admin') {
+      if (!username?.trim()) {
+        return { success: false, message: 'Admin accounts require a username.' };
+      }
+      if (!email.startsWith('AD-') || email.slice(3).length < 5) {
+        return { success: false, message: 'Admin email must start with "AD-" and include at least 5 characters after it.' };
+      }
+    }
+
+    setAuthState(prev => ({ ...prev, isLoading: true }));
+
+    await new Promise(resolve => setTimeout(resolve, 400));
+
+    const newUser: User = {
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+      email,
+      name: role === 'admin' ? username || 'Admin User' : username || 'Researcher',
+      role,
+    };
+
+    const result = createUser({ ...newUser, password });
+    if (result.user) {
+      setAuthState({
+        user: result.user,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+      persistSession(result.user);
+      return { success: true };
+    }
+
+    setAuthState(prev => ({ ...prev, isLoading: false }));
+    return { success: false, message: result.error ?? 'Could not create account.' };
   }, []);
 
   const logout = useCallback(() => {
+    clearSession();
     setAuthState({
       user: null,
       isAuthenticated: false,
@@ -81,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, logout, signUp }}>
       {children}
     </AuthContext.Provider>
   );

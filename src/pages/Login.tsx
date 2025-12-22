@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -7,21 +7,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dna, Leaf, Shield, Users, ArrowRight, Loader2 } from 'lucide-react';
+import { Dna, Leaf, Shield, Users, ArrowRight, Loader2, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { UserRole } from '@/types/auth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('user');
-  const { login, isLoading } = useAuth();
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const { login, signUp, isLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const urlMode = searchParams.get('mode');
+    if (urlMode === 'signup') {
+      setMode('signup');
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast({
         title: 'Missing credentials',
@@ -31,18 +41,36 @@ export default function Login() {
       return;
     }
 
-    const success = await login(email, password, selectedRole);
-    
-    if (success) {
+    if (mode === 'signin') {
+      const result = await login(email, password, selectedRole);
+
+      if (result.success) {
+        toast({
+          title: 'Welcome back!',
+          description: `Logged in as ${selectedRole === 'admin' ? 'Administrator' : 'Researcher'}`,
+        });
+        navigate(selectedRole === 'admin' ? '/admin' : '/dashboard');
+      } else {
+        toast({
+          title: 'Login failed',
+          description: result.message ?? 'Invalid credentials. Please try again.',
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
+
+    const result = await signUp({ email, password, role: selectedRole, username });
+    if (result.success) {
       toast({
-        title: 'Welcome back!',
-        description: `Logged in as ${selectedRole === 'admin' ? 'Administrator' : 'Researcher'}`,
+        title: 'Account created',
+        description: selectedRole === 'admin' ? 'Admin account ready.' : 'Welcome to CropGen AI.',
       });
       navigate(selectedRole === 'admin' ? '/admin' : '/dashboard');
     } else {
       toast({
-        title: 'Login failed',
-        description: 'Invalid credentials. Please try again.',
+        title: 'Could not create account',
+        description: result.message ?? 'Please check your details and try again.',
         variant: 'destructive',
       });
     }
@@ -120,10 +148,19 @@ export default function Login() {
 
           <Card variant="elevated" className="border-0 shadow-2xl">
             <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl">Welcome back</CardTitle>
-              <CardDescription>Sign in to access your dashboard</CardDescription>
+              <CardTitle className="text-2xl">{mode === 'signin' ? 'Welcome back' : 'Create your account'}</CardTitle>
+              <CardDescription>
+                {mode === 'signin' ? 'Sign in to access your dashboard' : 'Get started to save your credentials'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
+              <Tabs value={mode} onValueChange={(v) => setMode(v as 'signin' | 'signup')} className="mb-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signin">Sign In</TabsTrigger>
+                  <TabsTrigger value="signup">Get Started</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
               <Tabs value={selectedRole} onValueChange={(v) => setSelectedRole(v as UserRole)} className="mb-6">
                 <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="user" className="gap-2">
@@ -143,13 +180,27 @@ export default function Login() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="you@example.com"
+                    placeholder={selectedRole === 'admin' ? 'AD-youradmin@example.com' : 'you@example.com'}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="h-11"
                   />
                 </div>
                 
+                {mode === 'signup' && selectedRole === 'admin' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Admin Username</Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="AD-lead-admin"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="h-11"
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
                   <Input
@@ -173,16 +224,21 @@ export default function Login() {
                     <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
                     <>
-                      Sign In
+                      {mode === 'signin' ? 'Sign In' : 'Create Account'}
                       <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </Button>
               </form>
 
-              <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
-                <p className="text-xs text-muted-foreground text-center">
-                  <strong>Demo:</strong> Enter any email and password to login
+              <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border space-y-1">
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                  <Shield className="w-4 h-4" />
+                  Passwords for new accounts must be at least 8 characters.
+                </p>
+                <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
+                  <UserIcon className="w-4 h-4" />
+                  Admin emails must start with "AD-" plus 5 characters.
                 </p>
               </div>
             </CardContent>

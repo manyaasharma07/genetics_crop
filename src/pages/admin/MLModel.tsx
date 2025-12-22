@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ChartCard } from '@/components/dashboard/ChartCard';
@@ -37,6 +37,24 @@ export default function MLModel() {
   const [modelMetadata, setModelMetadata] = useState(getModelMetadata());
   const [currentAccuracy, setCurrentAccuracy] = useState(modelMetadata?.accuracy || 0);
   const [trainingStats, setTrainingStats] = useState(modelMetadata?.trainingStats);
+  const [debugInfo, setDebugInfo] = useState<string>('');
+
+  // Check CSV accessibility on mount
+  useEffect(() => {
+    const checkCSV = async () => {
+      try {
+        const response = await fetch('/Crop_recommendation.csv');
+        if (response.ok) {
+          setDebugInfo('✅ CSV file accessible');
+        } else {
+          setDebugInfo(`❌ CSV not found: ${response.status} ${response.statusText}`);
+        }
+      } catch (error) {
+        setDebugInfo(`❌ Error checking CSV: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    };
+    checkCSV();
+  }, []);
 
   const handleRetrain = async () => {
     setIsRetraining(true);
@@ -48,22 +66,32 @@ export default function MLModel() {
         setRetrainProgress(prev => Math.min(prev + 10, 90));
       }, 500);
       
+      console.log('🚀 Starting model training...');
+      setRetrainProgress(10);
+      
       // Train model
+      console.log('📊 Loading dataset...');
       const result = await trainModel();
+      console.log('✅ Model trained successfully!', result);
       
       // Save model
+      console.log('💾 Saving model...');
       saveModel(result);
+      console.log('✅ Model saved!');
       
       clearInterval(progressInterval);
       setRetrainProgress(100);
       
       // Update state
-      setModelMetadata(getModelMetadata());
+      const metadata = getModelMetadata();
+      console.log('📋 Model metadata:', metadata);
+      setModelMetadata(metadata);
       setCurrentAccuracy(result.accuracy);
       setTrainingStats(result.trainingStats);
       
       // Calculate detailed metrics
       const metrics = calculateMetrics(result.testPredictions, result.testLabels);
+      console.log('📈 Metrics:', metrics);
       
       setTimeout(() => {
         setIsRetraining(false);
@@ -74,11 +102,16 @@ export default function MLModel() {
         });
       }, 500);
     } catch (error) {
+      console.error('❌ Training error:', error);
       setIsRetraining(false);
       setRetrainProgress(0);
+      
+      const errorMessage = error instanceof Error ? error.message : "An error occurred during training";
+      console.error('Error details:', errorMessage);
+      
       toast({
         title: "Training Failed",
-        description: error instanceof Error ? error.message : "An error occurred during training",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -381,6 +414,31 @@ export default function MLModel() {
           </Card>
         </motion.div>
 
+        {/* Debug Info */}
+        {debugInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card variant="elevated" className="border-l-4 border-l-blue-500">
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium text-foreground">Debug Information</p>
+                    <p className="text-sm text-muted-foreground mt-1 font-mono">
+                      {debugInfo}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Check browser console (F12) for detailed logs during training.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Alert */}
         {!modelMetadata && (
           <motion.div
@@ -397,6 +455,11 @@ export default function MLModel() {
                     <p className="text-sm text-muted-foreground mt-1">
                       No trained model found. Click "Retrain Model" to train a new RandomForest model on the crop recommendation dataset.
                     </p>
+                    {debugInfo && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {debugInfo}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>

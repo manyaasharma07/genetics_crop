@@ -39,33 +39,71 @@ export interface DatasetStats {
 export async function loadDataset(csvPath?: string): Promise<LoadedDataset> {
   const path = csvPath || ML_CONFIG.datasetPath;
   
+  console.log(`📂 Attempting to load dataset from: ${path}`);
+  
   try {
     const response = await fetch(path);
+    console.log(`📡 Response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      throw new Error(`Failed to load dataset: ${response.statusText}`);
+      // Try alternative paths
+      const alternatives = [
+        './Crop_recommendation.csv',
+        '/public/Crop_recommendation.csv',
+        'Crop_recommendation.csv',
+      ];
+      
+      console.log(`⚠️ Primary path failed, trying alternatives...`);
+      for (const altPath of alternatives) {
+        try {
+          console.log(`🔄 Trying: ${altPath}`);
+          const altResponse = await fetch(altPath);
+          if (altResponse.ok) {
+            console.log(`✅ Found dataset at: ${altPath}`);
+            const csvText = await altResponse.text();
+            return parseCSVData(csvText);
+          }
+        } catch (e) {
+          console.log(`❌ Failed: ${altPath}`);
+        }
+      }
+      
+      throw new Error(`Failed to load dataset from ${path}. Status: ${response.status} ${response.statusText}. Please ensure Crop_recommendation.csv is in the public folder.`);
     }
     
     const csvText = await response.text();
+    console.log(`✅ CSV loaded, size: ${csvText.length} characters`);
     
-    return new Promise((resolve, reject) => {
-      Papa.parse<Record<string, string>>(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: (header) => header.trim(),
-        complete: (results) => {
-          try {
-            const dataset = parseAndValidate(results.data);
-            resolve(dataset);
-          } catch (error) {
-            reject(error);
-          }
-        },
-        error: (error) => reject(error),
-      });
-    });
+    return parseCSVData(csvText);
   } catch (error) {
-    throw new Error(`Error loading dataset from ${path}: ${error}`);
+    console.error(`❌ Error loading dataset:`, error);
+    throw new Error(`Error loading dataset from ${path}: ${error instanceof Error ? error.message : String(error)}`);
   }
+}
+
+function parseCSVData(csvText: string): Promise<LoadedDataset> {
+  return new Promise((resolve, reject) => {
+    Papa.parse<Record<string, string>>(csvText, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim(),
+      complete: (results) => {
+        try {
+          console.log(`📊 Parsed ${results.data.length} rows`);
+          const dataset = parseAndValidate(results.data);
+          console.log(`✅ Validated ${dataset.stats.validRows} valid rows`);
+          resolve(dataset);
+        } catch (error) {
+          console.error(`❌ Validation error:`, error);
+          reject(error);
+        }
+      },
+      error: (error) => {
+        console.error(`❌ CSV parse error:`, error);
+        reject(error);
+      },
+    });
+  });
 }
 
 /**

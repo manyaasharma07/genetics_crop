@@ -18,17 +18,17 @@ import {
 } from 'lucide-react';
 
 const stats = [
-  { title: 'Total Records', value: '24,857', change: '+12% from last month', changeType: 'positive' as const, icon: Database },
-  { title: 'Active Users', value: '156', change: '+8 new users', changeType: 'positive' as const, icon: Users },
-  { title: 'Pending Uploads', value: '3', change: 'Requires review', changeType: 'neutral' as const, icon: Upload },
-  { title: 'System Health', value: '99.9%', change: 'All systems operational', changeType: 'positive' as const, icon: Activity },
+  { title: 'Total Records', value: '0', change: '+0% from last month', changeType: 'positive' as const, icon: Database },
+  { title: 'Active Users', value: '0', change: '+0 new users', changeType: 'positive' as const, icon: Users },
+  { title: 'Pending Uploads', value: '0', change: 'Requires review', changeType: 'neutral' as const, icon: Upload },
+  { title: 'System Health', value: '0%', change: 'All systems operational', changeType: 'positive' as const, icon: Activity },
 ];
 
 const recentUploads = [
-  { id: 1, name: 'crop_traits_2024.csv', records: 1250, uploadedBy: 'Dr. Chen', status: 'Completed', date: '2024-01-15' },
-  { id: 2, name: 'soil_samples_batch3.csv', records: 890, uploadedBy: 'James W.', status: 'Processing', date: '2024-01-14' },
-  { id: 3, name: 'climate_data_q4.csv', records: 2100, uploadedBy: 'Maria L.', status: 'Pending', date: '2024-01-13' },
-  { id: 4, name: 'genetic_markers_v2.csv', records: 540, uploadedBy: 'Dr. Chen', status: 'Completed', date: '2024-01-12' },
+  { id: 1, name: 'crop_traits_2024.csv', records: 0, uploadedBy: 'Dr. Chen', status: 'Completed', date: '2024-01-15' },
+  { id: 2, name: 'soil_samples_batch3.csv', records: 0, uploadedBy: 'James W.', status: 'Processing', date: '2024-01-14' },
+  { id: 3, name: 'climate_data_q4.csv', records: 0, uploadedBy: 'Maria L.', status: 'Pending', date: '2024-01-13' },
+  { id: 4, name: 'genetic_markers_v2.csv', records: 0, uploadedBy: 'Dr. Chen', status: 'Completed', date: '2024-01-12' },
 ];
 
 const uploadColumns = [
@@ -40,19 +40,19 @@ const uploadColumns = [
 ];
 
 const systemMetrics = [
-  { name: 'Jan', value: 2400 },
-  { name: 'Feb', value: 2800 },
-  { name: 'Mar', value: 3200 },
-  { name: 'Apr', value: 2900 },
-  { name: 'May', value: 3500 },
-  { name: 'Jun', value: 4100 },
+  { name: 'Jan', value: 0 },
+  { name: 'Feb', value: 0 },
+  { name: 'Mar', value: 0 },
+  { name: 'Apr', value: 0 },
+  { name: 'May', value: 0 },
+  { name: 'Jun', value: 0 },
 ];
 
 const dataDistribution = [
-  { name: 'Crop Data', value: 35 },
-  { name: 'Genetic Traits', value: 28 },
-  { name: 'Soil Analysis', value: 20 },
-  { name: 'Climate Data', value: 17 },
+  { name: 'Crop Data', value: 0 },
+  { name: 'Genetic Traits', value: 0 },
+  { name: 'Soil Analysis', value: 0 },
+  { name: 'Climate Data', value: 0 },
 ];
 
 export default function AdminDashboard() {
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
                 <div>
                   <h3 className="font-semibold text-foreground">ML Model Performance Update</h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    The prediction model accuracy has improved to 94.2% after the latest training cycle. 
+                    The prediction model accuracy has improved to 0% after the latest training cycle. 
                     Consider scheduling a model update to incorporate recent genetic trait data.
                   </p>
                   <Button variant="link" className="px-0 mt-2 h-auto">

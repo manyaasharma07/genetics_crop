@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dna, Leaf, Brain, BarChart3, Shield, Users, ArrowRight, ChevronRight } from 'lucide-react';
 
+import cropRice from '@/assets/crop-rice.jpg';
+import cropWheat from '@/assets/crop-wheat.jpg';
+import cropCorn from '@/assets/crop-corn.jpg';
+
 const features = [
   {
     icon: Dna,
@@ -36,6 +40,12 @@ const features = [
     title: 'Collaboration',
     description: 'Work together with researchers and students on shared projects.',
   },
+];
+
+const cropImages = [
+  { src: cropRice, alt: 'Rice paddy field', label: 'Rice' },
+  { src: cropWheat, alt: 'Wheat field', label: 'Wheat' },
+  { src: cropCorn, alt: 'Corn field', label: 'Corn' },
 ];
 
 export default function Index() {
@@ -105,18 +115,40 @@ export default function Index() {
             </div>
           </motion.div>
 
+          {/* Crop Images */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16"
+          >
+            {cropImages.map((crop, i) => (
+              <div key={i} className="relative group overflow-hidden rounded-2xl shadow-lg">
+                <img 
+                  src={crop.src} 
+                  alt={crop.alt}
+                  className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-4 left-4 text-white font-semibold text-lg">
+                  {crop.label}
+                </div>
+              </div>
+            ))}
+          </motion.div>
+
           {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20"
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16"
           >
             {[
-              { value: '24K+', label: 'Data Records' },
-              { value: '847', label: 'Crop Varieties' },
-              { value: '94.2%', label: 'Model Accuracy' },
-              { value: '500+', label: 'Researchers' },
+              { value: '0', label: 'Data Records' },
+              { value: '0', label: 'Crop Varieties' },
+              { value: '0%', label: 'Model Accuracy' },
+              { value: '0', label: 'Researchers' },
             ].map((stat, i) => (
               <div key={i} className="text-center">
                 <div className="text-3xl sm:text-4xl font-bold text-foreground">{stat.value}</div>

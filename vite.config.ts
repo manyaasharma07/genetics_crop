@@ -15,4 +15,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['ml-random-forest', 'ml-matrix', 'papaparse'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/ml-random-forest/, /ml-matrix/, /node_modules/],
+    },
+  },
 }));

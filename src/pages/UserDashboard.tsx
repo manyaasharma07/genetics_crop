@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -19,14 +19,17 @@ import {
   TrendingUp,
   Search,
   Loader2,
+  Upload,
+  FileText,
+  X,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const stats = [
-  { title: 'Crop Varieties', value: '847', change: '+23 this month', changeType: 'positive' as const, icon: Leaf },
-  { title: 'Genetic Markers', value: '12,450', change: 'Active database', changeType: 'neutral' as const, icon: Dna },
-  { title: 'Climate Records', value: '5,892', change: 'Updated daily', changeType: 'positive' as const, icon: CloudSun },
-  { title: 'Predictions Made', value: '234', change: 'Your analyses', changeType: 'neutral' as const, icon: Brain },
+  { title: 'Crop Varieties', value: '0', change: '+0 this month', changeType: 'positive' as const, icon: Leaf },
+  { title: 'Genetic Markers', value: '0', change: 'Active database', changeType: 'neutral' as const, icon: Dna },
+  { title: 'Climate Records', value: '0', change: 'Updated daily', changeType: 'positive' as const, icon: CloudSun },
+  { title: 'Predictions Made', value: '0', change: 'Your analyses', changeType: 'neutral' as const, icon: Brain },
 ];
 
 const cropRecords = [
@@ -45,12 +48,12 @@ const cropColumns = [
 ];
 
 const yieldTrends = [
-  { name: 'Week 1', value: 78 },
-  { name: 'Week 2', value: 82 },
-  { name: 'Week 3', value: 85 },
-  { name: 'Week 4', value: 91 },
-  { name: 'Week 5', value: 88 },
-  { name: 'Week 6', value: 95 },
+  { name: 'Week 1', value: 0 },
+  { name: 'Week 2', value: 0 },
+  { name: 'Week 3', value: 0 },
+  { name: 'Week 4', value: 0 },
+  { name: 'Week 5', value: 0 },
+  { name: 'Week 6', value: 0 },
 ];
 
 export default function UserDashboard() {
@@ -61,6 +64,8 @@ export default function UserDashboard() {
     yield: string;
     recommendations: string[];
   }>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const handlePrediction = async (e: React.FormEvent) => {
@@ -72,12 +77,12 @@ export default function UserDashboard() {
     
     setPredictionResult({
       crop: 'IR64 Rice',
-      confidence: 94.2,
-      yield: '6.8 tons/hectare',
+      confidence: 0,
+      yield: '0 tons/hectare',
       recommendations: [
         'Optimal planting window: March-April',
-        'Recommended fertilizer: NPK 120-60-40',
-        'Irrigation schedule: Every 5-7 days',
+        'Recommended fertilizer: NPK 0-0-0',
+        'Irrigation schedule: Every 0 days',
         'Consider drought-resistant variety for backup',
       ],
     });
@@ -87,6 +92,59 @@ export default function UserDashboard() {
       title: 'Prediction Complete',
       description: 'Your crop recommendation is ready.',
     });
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+        setUploadedFile(file);
+        toast({
+          title: 'File Uploaded',
+          description: `${file.name} is ready for analysis.`,
+        });
+      } else {
+        toast({
+          title: 'Invalid File',
+          description: 'Please upload a CSV file.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
+  const handleCSVPrediction = async () => {
+    if (!uploadedFile) return;
+    
+    setIsPredicting(true);
+    
+    // Simulate API call for CSV processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    setPredictionResult({
+      crop: 'Multiple Crops Analyzed',
+      confidence: 0,
+      yield: '0 tons/hectare (avg)',
+      recommendations: [
+        'CSV file processed successfully',
+        '0 rows analyzed',
+        'Batch predictions generated',
+        'Download detailed report for full results',
+      ],
+    });
+    
+    setIsPredicting(false);
+    toast({
+      title: 'CSV Analysis Complete',
+      description: 'Batch predictions are ready.',
+    });
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -123,82 +181,155 @@ export default function UserDashboard() {
                   Crop Prediction
                 </CardTitle>
                 <CardDescription>
-                  Enter environmental data to get recommendations
+                  Enter environmental data or upload CSV
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handlePrediction} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="soilType">Soil Type</Label>
-                    <Select defaultValue="loamy">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select soil type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="loamy">Loamy Soil</SelectItem>
-                        <SelectItem value="clay">Clay Soil</SelectItem>
-                        <SelectItem value="sandy">Sandy Soil</SelectItem>
-                        <SelectItem value="silt">Silt Soil</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <Tabs defaultValue="manual" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsTrigger value="manual">Manual Input</TabsTrigger>
+                    <TabsTrigger value="csv">CSV Upload</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="manual">
+                    <form onSubmit={handlePrediction} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="soilType">Soil Type</Label>
+                        <Select defaultValue="loamy">
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select soil type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="loamy">Loamy Soil</SelectItem>
+                            <SelectItem value="clay">Clay Soil</SelectItem>
+                            <SelectItem value="sandy">Sandy Soil</SelectItem>
+                            <SelectItem value="silt">Silt Soil</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="ph">Soil pH</Label>
-                      <Input id="ph" type="number" step="0.1" placeholder="6.5" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="nitrogen">N (kg/ha)</Label>
-                      <Input id="nitrogen" type="number" placeholder="120" />
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="ph">Soil pH</Label>
+                          <Input id="ph" type="number" step="0.1" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="nitrogen">N (kg/ha)</Label>
+                          <Input id="nitrogen" type="number" placeholder="0" />
+                        </div>
+                      </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label htmlFor="rainfall">Rainfall (mm)</Label>
-                      <Input id="rainfall" type="number" placeholder="1200" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="temp">Avg Temp (°C)</Label>
-                      <Input id="temp" type="number" placeholder="28" />
-                    </div>
-                  </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="rainfall">Rainfall (mm)</Label>
+                          <Input id="rainfall" type="number" placeholder="0" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="temp">Avg Temp (°C)</Label>
+                          <Input id="temp" type="number" placeholder="0" />
+                        </div>
+                      </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="region">Region</Label>
-                    <Select defaultValue="tropical">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select region" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="tropical">Tropical</SelectItem>
-                        <SelectItem value="subtropical">Subtropical</SelectItem>
-                        <SelectItem value="temperate">Temperate</SelectItem>
-                        <SelectItem value="arid">Arid</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="region">Region</Label>
+                        <Select defaultValue="tropical">
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select region" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="tropical">Tropical</SelectItem>
+                            <SelectItem value="subtropical">Subtropical</SelectItem>
+                            <SelectItem value="temperate">Temperate</SelectItem>
+                            <SelectItem value="arid">Arid</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  <Button 
-                    type="submit" 
-                    variant="hero" 
-                    className="w-full"
-                    disabled={isPrediciting}
-                  >
-                    {isPrediciting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Brain className="w-4 h-4" />
-                        Get Prediction
-                      </>
-                    )}
-                  </Button>
-                </form>
+                      <Button 
+                        type="submit" 
+                        variant="hero" 
+                        className="w-full"
+                        disabled={isPrediciting}
+                      >
+                        {isPrediciting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <Brain className="w-4 h-4" />
+                            Get Prediction
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </TabsContent>
+                  
+                  <TabsContent value="csv">
+                    <div className="space-y-4">
+                      <div 
+                        className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".csv"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                        />
+                        <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                        <p className="text-sm font-medium text-foreground">
+                          Click to upload CSV file
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Supports CSV files with soil, climate, and genetic data
+                        </p>
+                      </div>
+
+                      {uploadedFile && (
+                        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <FileText className="w-5 h-5 text-primary" />
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{uploadedFile.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {(uploadedFile.size / 1024).toFixed(1)} KB
+                              </p>
+                            </div>
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={removeFile}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+
+                      <Button 
+                        variant="hero" 
+                        className="w-full"
+                        disabled={!uploadedFile || isPrediciting}
+                        onClick={handleCSVPrediction}
+                      >
+                        {isPrediciting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Processing CSV...
+                          </>
+                        ) : (
+                          <>
+                            <Brain className="w-4 h-4" />
+                            Analyze CSV Data
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </TabsContent>
+                </Tabs>
 
                 {/* Prediction Result */}
                 {predictionResult && (

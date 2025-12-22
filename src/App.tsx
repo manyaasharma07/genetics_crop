@@ -8,6 +8,12 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/AdminDashboard";
 import UserDashboard from "./pages/UserDashboard";
+import CropRecords from "./pages/user/CropRecords";
+import GeneticTraits from "./pages/user/GeneticTraits";
+import ClimateData from "./pages/user/ClimateData";
+import SoilAnalysis from "./pages/user/SoilAnalysis";
+import Predictions from "./pages/user/Predictions";
+import Reports from "./pages/user/Reports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -56,10 +62,50 @@ function AppRoutes() {
         } 
       />
       <Route 
-        path="/dashboard/*" 
+        path="/dashboard/crops" 
         element={
           <ProtectedRoute requiredRole="user">
-            <UserDashboard />
+            <CropRecords />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/dashboard/traits" 
+        element={
+          <ProtectedRoute requiredRole="user">
+            <GeneticTraits />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/dashboard/climate" 
+        element={
+          <ProtectedRoute requiredRole="user">
+            <ClimateData />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/dashboard/soil" 
+        element={
+          <ProtectedRoute requiredRole="user">
+            <SoilAnalysis />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/dashboard/predictions" 
+        element={
+          <ProtectedRoute requiredRole="user">
+            <Predictions />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/dashboard/reports" 
+        element={
+          <ProtectedRoute requiredRole="user">
+            <Reports />
           </ProtectedRoute>
         } 
       />

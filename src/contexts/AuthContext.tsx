@@ -86,7 +86,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role,
     };
 
-    const result = createUser({ ...newUser, password });
+    const result = createUser(
+      {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role: newUser.role,
+      },
+      password
+    );
     if (result.user) {
       setAuthState({
         user: result.user,

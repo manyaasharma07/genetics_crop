@@ -1,6 +1,14 @@
 import { User, UserRole } from '@/types/auth';
+import bcrypt from 'bcryptjs';
 
-type StoredUser = User & { password: string };
+interface StoredUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  passwordHash: string;
+  createdAt: string;
+}
 
 const USERS_KEY = 'auth_users';
 const SESSION_KEY = 'auth_session';
@@ -39,22 +47,31 @@ export const findUser = (email: string) => {
 
 export const authenticateUser = (email: string, password: string, role: UserRole) => {
   const user = findUser(email);
-  if (user && user.password === password && user.role === role) {
-    const { password: _pw, ...safeUser } = user;
+  if (user && bcrypt.compareSync(password, user.passwordHash) && user.role === role) {
+    const { passwordHash: _pw, ...safeUser } = user;
     return { user: safeUser as User };
   }
   return { error: 'Invalid email or password.' };
 };
 
-export const createUser = (user: StoredUser) => {
+export const createUser = (user: Omit<StoredUser, 'passwordHash' | 'createdAt'>, password: string) => {
   const existing = findUser(user.email);
   if (existing) {
-    return { error: 'An account with this email already exists.' };
+    return { error: 'Account already exists. Please log in.' };
   }
+
+  const passwordHash = bcrypt.hashSync(password, 10);
   const users = readUsers();
-  const nextUsers = [...users, user];
+  const nextUsers: StoredUser[] = [
+    ...users,
+    {
+      ...user,
+      passwordHash,
+      createdAt: new Date().toISOString(),
+    },
+  ];
   writeUsers(nextUsers);
-  const { password: _pw, ...safeUser } = user;
+  const { passwordHash: _pw, ...safeUser } = nextUsers[nextUsers.length - 1];
   return { user: safeUser as User };
 };
 

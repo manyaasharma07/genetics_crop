@@ -135,16 +135,40 @@ export default function Predictions() {
         rainfall: parseFloat(formData.rainfall),
       };
       
-      const result = predict(input);
+      const result = await fetch('/api/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          geneticTraits: {
+            height: parseFloat(formData.N) || 0,
+            yield: parseFloat(formData.P) || 0,
+            diseaseResistance: parseFloat(formData.K) || 0,
+          },
+          environmentalTraits: {
+            temperature: parseFloat(formData.temperature) || 0,
+            humidity: parseFloat(formData.humidity) || 0,
+            soilPh: parseFloat(formData.ph) || 0,
+          },
+        }),
+      });
+
+      if (!result.ok) {
+        const error = await result.json();
+        throw new Error(error.error || 'Prediction failed');
+      }
+
+      const prediction = await result.json();
       
       // Convert prediction to display format
       setPredictionResult({
         crops: [{
-          name: result.crop,
+          name: prediction.recommendation,
           yield: 'N/A', // Model doesn't predict yield, only crop type
-          suitability: Math.round(result.confidence),
-          risk: result.confidence > 80 ? 'Low' : result.confidence > 60 ? 'Medium' : 'High',
-          confidence: Math.round(result.confidence),
+          suitability: Math.round(prediction.confidence * 100),
+          risk: prediction.confidence > 0.8 ? 'Low' : prediction.confidence > 0.6 ? 'Medium' : 'High',
+          confidence: Math.round(prediction.confidence * 100),
         }],
       });
       
@@ -373,7 +397,7 @@ export default function Predictions() {
                           <Label>Temperature (°C)</Label>
                           <Input 
                             type="number" 
-                            step="0.1" 
+                            step="5" 
                             placeholder="0.0" 
                             value={formData.temperature}
                             onChange={(e) => setFormData({...formData, temperature: e.target.value})}
@@ -386,7 +410,7 @@ export default function Predictions() {
                           <Label>Humidity (%)</Label>
                           <Input 
                             type="number" 
-                            step="0.1" 
+                            step="5" 
                             placeholder="0.0" 
                             value={formData.humidity}
                             onChange={(e) => setFormData({...formData, humidity: e.target.value})}

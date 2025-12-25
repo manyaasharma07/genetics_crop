@@ -58,28 +58,43 @@ export default function BulkUpload() {
   };
 
   const handleUpload = async () => {
-    if (!uploadedFile || !selectedCategory) return;
-    
+    if (!uploadedFile) return;
+
     setUploading(true);
     setUploadProgress(0);
-    
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setUploading(false);
-          toast({
-            title: "Upload Complete",
-            description: `Successfully uploaded ${uploadedFile.name}`,
-          });
-          setUploadedFile(null);
-          setShowPreview(false);
-          return 100;
-        }
-        return prev + 10;
+
+    try {
+      const formData = new FormData();
+      formData.append('dataset', uploadedFile);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
       });
-    }, 200);
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+
+      const result = await response.json();
+
+      setUploadProgress(100);
+      toast({
+        title: "Upload Complete",
+        description: `Successfully uploaded ${result.insertedCount} records`,
+      });
+      setUploadedFile(null);
+      setShowPreview(false);
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : 'An error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const getStatusIcon = (status: string) => {

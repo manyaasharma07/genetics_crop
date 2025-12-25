@@ -74,16 +74,16 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         )}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
-          <Link to="/" className="flex items-center gap-3">
-            <img src="/rv-logo.svg" alt="RV College of Engineering" className="w-10 h-10 object-contain" />
+        <div className="h-48 flex items-center justify-between px-6 border-b border-sidebar-border">
+          <Link to="/" className="flex items-center gap-6">
+            <img src="/rv-logo.svg" alt="RV College of Engineering" className="w-40 h-40 object-contain" />
             <AnimatePresence>
               {isOpen && (
                 <motion.span
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -10 }}
-                  className="font-semibold text-sidebar-foreground whitespace-nowrap"
+                  className="font-semibold text-sidebar-foreground whitespace-nowrap text-xl"
                 >
                   Genetic DBMS
                 </motion.span>

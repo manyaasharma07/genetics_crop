@@ -18,8 +18,18 @@ import {
   Play,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { trainModel, calculateMetrics } from '@/lib/ml/modelTraining';
-import { saveModel, getModelMetadata, deleteModel } from '@/lib/ml/modelStorage';
+
+interface MLStatus {
+  isTrained: boolean;
+  trainedAt?: string;
+  datasetName?: string;
+  modelVersion?: string;
+  accuracy?: number;
+  trainingStats?: {
+    trainSize: number;
+    testSize: number;
+  };
+}
 
 const featureImportance = [
   { name: 'Soil pH', value: 0 },
@@ -34,78 +44,74 @@ export default function MLModel() {
   const { toast } = useToast();
   const [isRetraining, setIsRetraining] = useState(false);
   const [retrainProgress, setRetrainProgress] = useState(0);
-  const [modelMetadata, setModelMetadata] = useState(getModelMetadata());
-  const [currentAccuracy, setCurrentAccuracy] = useState(modelMetadata?.accuracy || 0);
-  const [trainingStats, setTrainingStats] = useState(modelMetadata?.trainingStats);
+  const [mlStatus, setMlStatus] = useState<MLStatus>({ isTrained: false });
   const [debugInfo, setDebugInfo] = useState<string>('');
 
-  // Check CSV accessibility on mount
+  // Fetch ML status on mount
   useEffect(() => {
-    const checkCSV = async () => {
-      try {
-        const response = await fetch('/Crop_recommendation.csv');
-        if (response.ok) {
-          setDebugInfo('✅ CSV file accessible');
-        } else {
-          setDebugInfo(`❌ CSV not found: ${response.status} ${response.statusText}`);
-        }
-      } catch (error) {
-        setDebugInfo(`❌ Error checking CSV: ${error instanceof Error ? error.message : String(error)}`);
-      }
-    };
-    checkCSV();
+    fetchMLStatus();
   }, []);
+
+  const fetchMLStatus = async () => {
+    try {
+      const response = await fetch('/api/ml-status');
+      if (response.ok) {
+        const status = await response.json();
+        setMlStatus(status);
+        setDebugInfo('✅ ML status loaded from database');
+      } else {
+        setDebugInfo(`❌ Failed to load ML status: ${response.status}`);
+      }
+    } catch (error) {
+      setDebugInfo(`❌ Error loading ML status: ${error}`);
+    }
+  };
 
   const handleRetrain = async () => {
     setIsRetraining(true);
     setRetrainProgress(0);
-    
+
     try {
       // Simulate progress updates
       const progressInterval = setInterval(() => {
         setRetrainProgress(prev => Math.min(prev + 10, 90));
       }, 500);
-      
+
       console.log('🚀 Starting model training...');
       setRetrainProgress(10);
-      
-      // Train model
-      console.log('📊 Loading dataset...');
-      const result = await trainModel();
+
+      // Call training API
+      const response = await fetch('/api/train', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Training failed');
+      }
+
+      const result = await response.json();
       console.log('✅ Model trained successfully!', result);
-      
-      // Save model
-      console.log('💾 Saving model...');
-      saveModel(result);
-      console.log('✅ Model saved!');
-      
+
       clearInterval(progressInterval);
       setRetrainProgress(100);
-      
-      // Update state
-      const metadata = getModelMetadata();
-      console.log('📋 Model metadata:', metadata);
-      setModelMetadata(metadata);
-      setCurrentAccuracy(result.accuracy);
-      setTrainingStats(result.trainingStats);
-      
-      // Calculate detailed metrics
-      const metrics = calculateMetrics(result.testPredictions, result.testLabels);
-      console.log('📈 Metrics:', metrics);
-      
+
+      // Refresh status
+      await fetchMLStatus();
+
       setTimeout(() => {
         setIsRetraining(false);
         setRetrainProgress(0);
         toast({
           title: "Model Retrained Successfully",
-          description: `Accuracy: ${result.accuracy.toFixed(2)}% | Trained on ${result.trainingStats.trainSize} samples`,
+          description: `Accuracy: ${(result.accuracy * 100).toFixed(2)}% | Trained on ${result.trainingStats.trainSize} samples`,
         });
       }, 500);
     } catch (error) {
       console.error('❌ Training error:', error);
       setIsRetraining(false);
       setRetrainProgress(0);
-      
+
       const errorMessage = error instanceof Error ? error.message : "An error occurred during training";
       console.error('Error details:', errorMessage);
       
@@ -224,7 +230,7 @@ export default function MLModel() {
                   <div>
                     <p className="text-sm text-muted-foreground">Version</p>
                     <p className="text-xl font-bold text-foreground mt-1">
-                      {modelMetadata ? `v${modelMetadata.version}` : 'Not Trained'}
+                      {mlStatus.isTrained ? `v${mlStatus.modelVersion?.split('_')[1]?.split('.')[0] || '1'}` : 'Not Trained'}
                     </p>
                   </div>
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -248,9 +254,9 @@ export default function MLModel() {
                     <p className="text-xl font-bold text-foreground mt-1">
                       {trainingStats?.trainSize.toLocaleString() || '0'}
                     </p>
-                    {modelMetadata && (
+                    {mlStatus.isTrained && mlStatus.trainedAt && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Last trained: {new Date(modelMetadata.trainedAt).toLocaleString()}
+                        Last trained: {new Date(mlStatus.trainedAt).toLocaleString()}
                       </p>
                     )}
                   </div>
@@ -366,21 +372,21 @@ export default function MLModel() {
               <CardDescription>Current model version and training details</CardDescription>
             </CardHeader>
             <CardContent>
-              {modelMetadata ? (
+              {mlStatus.isTrained ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                       <div>
-                        <p className="font-medium text-foreground">v{modelMetadata.version}</p>
+                        <p className="font-medium text-foreground">v{mlStatus.modelVersion?.split('_')[1]?.split('.')[0] || '1'}</p>
                         <p className="text-sm text-muted-foreground">
-                          Trained: {new Date(modelMetadata.trainedAt).toLocaleString()}
+                          Trained: {mlStatus.trainedAt ? new Date(mlStatus.trainedAt).toLocaleString() : 'Unknown'}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm text-muted-foreground">
-                        Accuracy: {modelMetadata.accuracy.toFixed(1)}%
+                        Accuracy: {mlStatus.accuracy ? (mlStatus.accuracy * 100).toFixed(1) : '0'}%
                       </span>
                       <Badge variant="default">Active</Badge>
                     </div>
@@ -388,19 +394,19 @@ export default function MLModel() {
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     <div>
                       <p className="text-xs text-muted-foreground">Training Samples</p>
-                      <p className="text-sm font-medium">{modelMetadata.trainingStats.trainSize.toLocaleString()}</p>
+                      <p className="text-sm font-medium">{mlStatus.trainingStats?.trainSize?.toLocaleString() || '0'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Test Samples</p>
-                      <p className="text-sm font-medium">{modelMetadata.trainingStats.testSize.toLocaleString()}</p>
+                      <p className="text-sm font-medium">{mlStatus.trainingStats?.testSize?.toLocaleString() || '0'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Features</p>
-                      <p className="text-sm font-medium">{modelMetadata.trainingStats.nFeatures}</p>
+                      <p className="text-sm font-medium">6</p>
                     </div>
                     <div>
                       <p className="text-xs text-muted-foreground">Classes</p>
-                      <p className="text-sm font-medium">{modelMetadata.trainingStats.nClasses}</p>
+                      <p className="text-sm font-medium">Multiple</p>
                     </div>
                   </div>
                 </div>

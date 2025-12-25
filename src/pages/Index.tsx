@@ -55,10 +55,8 @@ export default function Index() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-              <Dna className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-xl">CropGen AI</span>
+            <img src="/rv-logo.svg" alt="RV College of Engineering" className="w-10 h-10 object-contain" />
+            <span className="font-semibold text-xl">Genetic DBMS</span>
           </Link>
           
           <div className="flex items-center gap-4">
@@ -218,7 +216,7 @@ export default function Index() {
                   Ready to Transform Your Research?
                 </h2>
                 <p className="text-primary-foreground/90 mb-8 max-w-xl mx-auto">
-                  Join researchers and agronomists who are using CropGen AI to make 
+                  Join researchers and agronomists who are using this system to make 
                   data-driven decisions and improve crop yields.
                 </p>
                 <Link to="/login?mode=signup">
@@ -240,12 +238,20 @@ export default function Index() {
       <footer className="py-8 px-6 border-t border-border">
         <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Dna className="w-5 h-5 text-primary" />
-            <span className="font-medium">CropGen AI</span>
+            <img src="/rv-logo.svg" alt="RV College of Engineering" className="w-5 h-5 object-contain" />
+            <span className="font-medium">Genetic Traits & Crop Recommendation System</span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            © 2024 CropGen AI. Genetic Traits & Crop Recommendation System.
-          </p>
+          <div className="text-sm text-muted-foreground">
+            <p>© 2024 Genetic Traits & Crop Recommendation System.</p>
+            <div className="mt-3 bg-muted/10 p-4 rounded-md">
+              <h4 className="font-semibold mb-1">Contributors</h4>
+              <p className="text-sm">Department of Artificial Intelligence and Machine Learning</p>
+              <ul className="text-sm mt-2 list-disc list-inside">
+                <li>Manya Sharma — 1RV23AI053</li>
+                <li>Nishan Shetty — 1RV23AI068</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </footer>
     </div>

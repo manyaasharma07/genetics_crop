@@ -8,9 +8,9 @@ import { LabelEncoder, Scaler } from './preprocessing';
 import { TrainingResult } from './modelTraining';
 
 export interface SavedModel {
-  modelData: any; // Serialized model
-  labelEncoder: any;
-  scaler: any;
+  modelData: unknown; // Serialized model
+  labelEncoder: unknown;
+  scaler: unknown;
   metadata: {
     version: string;
     trainedAt: string;

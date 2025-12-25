@@ -20,7 +20,7 @@ interface ChartCardProps {
   title: string;
   description?: string;
   type: 'area' | 'bar' | 'pie';
-  data: any[];
+  data: Record<string, unknown>[];
   dataKey?: string;
   xAxisKey?: string;
   colors?: string[];

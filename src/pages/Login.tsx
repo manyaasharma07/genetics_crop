@@ -61,10 +61,10 @@ export default function Login() {
     }
 
     const result = await signUp({ email, password, role: selectedRole, username });
-    if (result.success) {
+      if (result.success) {
       toast({
         title: 'Account created',
-        description: selectedRole === 'admin' ? 'Admin account ready.' : 'Welcome to CropGen AI.',
+        description: selectedRole === 'admin' ? 'Admin account ready.' : 'Welcome to the platform.',
       });
       navigate(selectedRole === 'admin' ? '/admin/dashboard' : '/dashboard');
     } else {
@@ -89,12 +89,10 @@ export default function Login() {
             transition={{ duration: 0.6 }}
           >
             <div className="flex items-center gap-3 mb-8">
-              <div className="w-14 h-14 rounded-2xl bg-primary-foreground/20 backdrop-blur flex items-center justify-center">
-                <Dna className="w-8 h-8" />
-              </div>
+              <img src="/rv-logo.svg" alt="RV College of Engineering" className="w-14 h-14 object-contain" />
               <div>
-                <h1 className="text-3xl font-bold">CropGen AI</h1>
-                <p className="text-primary-foreground/80">Genetic Traits & Crop Recommendation</p>
+                <h1 className="text-3xl font-bold">Genetic Traits & Crop Recommendation</h1>
+                <p className="text-primary-foreground/80">RV College of Engineering</p>
               </div>
             </div>
 
@@ -140,10 +138,8 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
-            <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center">
-              <Dna className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold">CropGen AI</span>
+            <img src="/rv-logo.svg" alt="RV College of Engineering" className="w-12 h-12 object-contain" />
+            <span className="text-2xl font-bold">Genetic DBMS</span>
           </div>
 
           <Card variant="elevated" className="border-0 shadow-2xl">

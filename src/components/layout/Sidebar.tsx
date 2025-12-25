@@ -76,9 +76,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-              <Dna className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <img src="/rv-logo.svg" alt="RV College of Engineering" className="w-10 h-10 object-contain" />
             <AnimatePresence>
               {isOpen && (
                 <motion.span
@@ -87,7 +85,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   exit={{ opacity: 0, x: -10 }}
                   className="font-semibold text-sidebar-foreground whitespace-nowrap"
                 >
-                  CropGen AI
+                  Genetic DBMS
                 </motion.span>
               )}
             </AnimatePresence>

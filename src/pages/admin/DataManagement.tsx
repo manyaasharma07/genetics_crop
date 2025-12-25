@@ -72,7 +72,7 @@ export default function DataManagement() {
     { key: 'source', label: 'Source' },
     { key: 'status', label: 'Status', render: (v: string) => <StatusBadge status={v} /> },
     { key: 'lastUpdated', label: 'Last Updated' },
-    { key: 'actions', label: 'Actions', render: (_: any, row: any) => (
+    { key: 'actions', label: 'Actions', render: (_: unknown, row: Record<string, unknown>) => (
       <div className="flex gap-2">
         <Button variant="ghost" size="icon" className="h-8 w-8">
           <Edit className="w-4 h-4" />

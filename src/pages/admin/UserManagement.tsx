@@ -30,7 +30,7 @@ const users = [
   { id: 1, name: 'Dr. Sarah Chen', email: 'sarah.chen@uni.edu', role: 'Researcher', status: 'Active', lastActive: '2024-01-15 14:32', predictions: 0 },
   { id: 2, name: 'James Wilson', email: 'j.wilson@agri.org', role: 'Researcher', status: 'Active', lastActive: '2024-01-15 12:18', predictions: 0 },
   { id: 3, name: 'Maria Lopez', email: 'm.lopez@farm.co', role: 'Researcher', status: 'Inactive', lastActive: '2024-01-10 09:45', predictions: 0 },
-  { id: 4, name: 'Admin User', email: 'admin@cropgen.ai', role: 'Admin', status: 'Active', lastActive: '2024-01-15 16:00', predictions: 0 },
+  { id: 4, name: 'Admin User', email: 'admin@rvce.edu', role: 'Admin', status: 'Active', lastActive: '2024-01-15 16:00', predictions: 0 },
   { id: 5, name: 'John Doe', email: 'john.doe@research.edu', role: 'Researcher', status: 'Active', lastActive: '2024-01-14 11:20', predictions: 0 },
 ];
 
@@ -69,7 +69,7 @@ export default function UserManagement() {
   };
 
   const columns = [
-    { key: 'name', label: 'User', render: (v: string, row: any) => (
+    { key: 'name', label: 'User', render: (v: string, row: Record<string, unknown>) => (
       <div>
         <p className="font-medium text-foreground">{v}</p>
         <p className="text-sm text-muted-foreground">{row.email}</p>
@@ -84,7 +84,7 @@ export default function UserManagement() {
     { key: 'status', label: 'Status', render: (v: string) => <StatusBadge status={v} /> },
     { key: 'lastActive', label: 'Last Active' },
     { key: 'predictions', label: 'Predictions', render: (v: number) => v.toLocaleString() },
-    { key: 'actions', label: '', render: (_: any, row: any) => (
+    { key: 'actions', label: '', render: (_: unknown, row: Record<string, unknown>) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8">

@@ -61,7 +61,7 @@ export class LabelEncoder {
     };
   }
 
-  static fromJSON(json: any): LabelEncoder {
+  static fromJSON(json: unknown): LabelEncoder {
     const encoder = new LabelEncoder();
     encoder.labelToIndex = new Map(json.labelToIndex);
     encoder.indexToLabel = new Map(json.indexToLabel);
@@ -114,7 +114,7 @@ export class Scaler {
     };
   }
 
-  static fromJSON(json: any): Scaler {
+  static fromJSON(json: unknown): Scaler {
     const scaler = new Scaler();
     scaler.mean = json.mean;
     scaler.std = json.std;
